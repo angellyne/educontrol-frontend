@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Alunos & Responsáveis - EduControl</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🎓</span>
+    <h1>EduControl <small>v2.0</small></h1>
+  </div>
+  <nav class="tabs">
+    <a class="tab" href="index.html">Dashboard</a>
+    <a class="tab" href="escolas.html">Escolas &amp; Docentes</a>
+    <a class="tab" href="disciplinas.html">Disciplinas</a>
+    <a class="tab" href="turmas.html">Turmas</a>
+    <a class="tab active" href="alunos.html">Alunos &amp; Responsáveis</a>
+    <a class="tab" href="matriculas.html">Matrículas</a>
+    <a class="tab" href="frequencia.html">Frequência</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero-banner banner-criancas"><div class="hero-content"><span class="hero-tag">Comunidade</span><h2 class="hero-title">Alunos & Responsáveis</h2><p class="hero-subtitle">Cada aluno com sua história, cada responsável com seu papel.</p></div></section>
+<h2>Cadastro de Alunos e Responsáveis</h2>
+
+  <div class="grid-2">
+    <form id="form-aluno" class="form">
+      <h3>Novo Aluno</h3>
+      <label>Nome <input name="nome" required /></label>
+      <label>CPF <input name="cpf" required /></label>
+      <label>Data de Nascimento <input type="date" name="nascimento" required /></label>
+
+      <label>Foto do Aluno
+        <input type="file" name="foto" accept="image/*" id="input-foto" />
+      </label>
+      <div id="preview-foto"></div>
+
+      <label>Turma <select name="id_turma" id="select-turma-aluno"></select></label>
+      <button type="submit">Cadastrar Aluno</button>
+    </form>
+
+    <form id="form-responsavel" class="form">
+      <h3>Novo Responsável</h3>
+      <label>Nome <input name="nome" required /></label>
+      <label>CPF <input name="cpf" required /></label>
+      <label>Telefone <input name="telefone" /></label>
+      <label>Vincular ao Aluno <select name="id_aluno" id="select-aluno-resp" required></select></label>
+      <label>Grau de Parentesco
+        <select name="parentesco" required>
+          <option value="">Selecione...</option>
+          <option>Mãe</option><option>Pai</option><option>Avô/Avó</option>
+          <option>Tio/Tia</option><option>Tutor Legal</option><option>Outro</option>
+        </select>
+      </label>
+      <button type="submit">Cadastrar Responsável</button>
+    </form>
+  </div>
+
+  <h3>Alunos</h3>
+  <table id="tabela-alunos">
+    <thead><tr><th>Foto</th><th>ID</th><th>Nome</th><th>CPF</th><th>Nascimento</th><th>Idade</th><th>Turma</th><th>Responsáveis</th><th>Ações</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h3>Responsáveis</h3>
+  <table id="tabela-responsaveis">
+    <thead><tr><th>ID</th><th>Nome</th><th>CPF</th><th>Telefone</th><th>Ações</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</main>
+
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+<script>
+let alunos=[], responsaveis=[], turmas=[];
+
+async function carregar(){
+  try {
+    [alunos, responsaveis, turmas] = await Promise.all([
+      get('/alunos'), get('/responsaveis'), get('/turmas')
+    ]);
+    renderAlunos();
+    renderResponsaveis();
+    preencherSelects();
+  } catch(e){
+    console.error(e);
+    toast('Erro ao carregar.', 'error');
+  }
+}
+
+function renderAlunos(){
+  const tb = document.querySelector('#tabela-alunos tbody');
+  tb.innerHTML = alunos.length
+    ? alunos.map(a => {
+        const resps = responsaveis.filter(r => r.id_aluno === a.id_aluno)
+          .map(r => `${r.nome} (${r.parentesco})`).join(', ') || '—';
+        const foto = a.foto_url
+          ? `<img src="${a.foto_url}" alt="foto" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" />`
+          : `<span style="display:inline-block;width:40px;height:40px;border-radius:50%;background:#e2e8f0;line-height:40px;text-align:center;">👤</span>`;
+        return `<tr>
+          <td>${foto}</td>
+          <td>${a.id_aluno}</td><td>${a.nome}</td><td>${a.cpf}</td>
+          <td>${a.data_nascimento||'—'}</td><td>${a.idade||'—'}</td>
+          <td>${a.turma||'—'}</td><td>${resps}</td>
+          <td><button class="btn-del" onclick="excluir('alunos', ${a.id_aluno}, carregar)">Excluir</button></td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="9" class="empty">Nenhum aluno cadastrado.</td></tr>`;
+}
+
+function renderResponsaveis(){
+  const tb = document.querySelector('#tabela-responsaveis tbody');
+  tb.innerHTML = responsaveis.length
+    ? responsaveis.map(r => `<tr><td>${r.id_responsavel}</td><td>${r.nome}</td><td>${r.cpf}</td><td>${r.telefone||'—'}</td><td><button class="btn-del" onclick="excluir('responsaveis', ${r.id_responsavel}, carregar)">Excluir</button></td></tr>`).join('')
+    : `<tr><td colspan="5" class="empty">Nenhum responsável cadastrado.</td></tr>`;
+}
+
+function preencherSelects(){
+  const selTurma = document.querySelector('#select-turma-aluno');
+  selTurma.innerHTML = '<option value="">Sem turma</option>' +
+    turmas.map(t => `<option value="${t.id_turma}">${t.serie} (${t.ano_letivo})</option>`).join('');
+
+  const selAluno = document.querySelector('#select-aluno-resp');
+  selAluno.innerHTML = '<option value="">Selecione...</option>' +
+    alunos.map(a => `<option value="${a.id_aluno}">${a.nome}</option>`).join('');
+}
+
+/* Upload de foto */
+const inputFoto = document.querySelector('#input-foto');
+const preview = document.querySelector('#preview-foto');
+let fotoUrl = '';
+
+inputFoto.addEventListener('change', async () => {
+  const arquivo = inputFoto.files[0];
+  if(!arquivo) return;
+
+  // Preview local
+  preview.innerHTML = `<img src="${URL.createObjectURL(arquivo)}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:10px;" />`;
+
+  // Upload pro servidor
+  const fd = new FormData();
+  fd.append('arquivo', arquivo);
+  try {
+    const r = await fetch('http://localhost:3000/api/upload', { method: 'POST', body: fd });
+    const json = await r.json();
+    if(!r.ok) throw new Error(json.erro || 'Erro no upload');
+    fotoUrl = json.url;
+    toast('Foto enviada!', 'success');
+  } catch(err){
+    toast('Erro ao enviar foto: ' + err.message, 'error');
+    fotoUrl = '';
+  }
+});
+
+bind('form-aluno', '/alunos', f => ({
+  nome: f.nome.value.trim(),
+  cpf: f.cpf.value.trim(),
+  nascimento: f.nascimento.value,
+  foto_url: fotoUrl,
+  id_turma: f.id_turma.value || null
+}), 'Aluno cadastrado!', async () => {
+  fotoUrl = '';
+  preview.innerHTML = '';
+  inputFoto.value = '';
+  await carregar();
+});
+
+bind('form-responsavel', '/responsaveis', f => ({
+  nome: f.nome.value.trim(),
+  cpf: f.cpf.value.trim(),
+  telefone: f.telefone.value.trim(),
+  id_aluno: f.id_aluno.value,
+  parentesco: f.parentesco.value
+}), 'Responsável cadastrado!', carregar);
+
+carregar();
+</script>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <span class="footer-logo-icon">🎓</span>
+        <div>
+          <div class="footer-logo-name">EduControl</div>
+          <div class="footer-logo-tag">Sistema de Gestão Escolar</div>
+        </div>
+      </div>
+      <p class="footer-desc">
+        Plataforma completa para gestão de escolas, professores, turmas e alunos.
+        Digitalize o ecossistema escolar com eficiência.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Módulos</h4>
+      <a href="escolas.html">Escolas</a>
+      <a href="disciplinas.html">Disciplinas</a>
+      <a href="turmas.html">Turmas</a>
+      <a href="alunos.html">Alunos</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Gestão</h4>
+      <a href="matriculas.html">Matrículas</a>
+      <a href="frequencia.html">Frequência</a>
+      <a href="index.html">Dashboard</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Contato</h4>
+      <a href="#">contato.com</a>
+      <a href="#">(11) 9999-9999</a>
+      <a href="#">Suporte técnico</a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 EduControl. Todos os direitos reservados.</span>
+    <span>Feito para gestão escolar</span>
+  </div>
+</footer>
+</body>
+</html>

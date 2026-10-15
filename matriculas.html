@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Matrículas - EduControl</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🎓</span>
+    <h1>EduControl <small>v2.0</small></h1>
+  </div>
+  <nav class="tabs">
+    <a class="tab" href="index.html">Dashboard</a>
+    <a class="tab" href="escolas.html">Escolas &amp; Docentes</a>
+    <a class="tab" href="disciplinas.html">Disciplinas</a>
+    <a class="tab" href="turmas.html">Turmas</a>
+    <a class="tab" href="alunos.html">Alunos &amp; Responsáveis</a>
+    <a class="tab active" href="matriculas.html">Matrículas</a>
+    <a class="tab" href="frequencia.html">Frequência</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero-banner banner-escola"><div class="hero-content"><span class="hero-tag">Ano Letivo</span><h2 class="hero-title">Matrículas Abertas</h2><p class="hero-subtitle">Emita matrículas com número único e anexe comprovantes.</p></div></section>
+<h2>Emissão e Controle de Matrículas</h2>
+
+  <form id="form-matricula" class="form inline">
+    <label>Aluno <select name="id_aluno" id="select-aluno-matricula" required></select></label>
+    <label>Período Letivo <input name="periodo" placeholder="Ex.: 2026" required /></label>
+    <label>Comprovante de Residência
+      <input type="file" name="comprovante" id="input-comprovante" accept="image/*,.pdf" />
+    </label>
+    <button type="submit">Emitir Matrícula</button>
+  </form>
+  <div id="preview-comprovante" style="margin-bottom:16px;"></div>
+
+  <h3>Matrículas Emitidas</h3>
+  <table id="tabela-matriculas">
+    <thead><tr><th>Nº Matrícula</th><th>Aluno</th><th>Período</th><th>Data</th><th>Comprovante</th><th>Ações</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <p class="hint">um aluno só pode ter um registro ativo de matrícula por período letivo.</p>
+</main>
+
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+<script>
+let comprovanteUrl = '';
+
+const inputComp = document.querySelector('#input-comprovante');
+const previewComp = document.querySelector('#preview-comprovante');
+
+inputComp.addEventListener('change', async () => {
+  const arquivo = inputComp.files[0];
+  if(!arquivo) return;
+
+  if(arquivo.type.startsWith('image/')){
+    previewComp.innerHTML = `<img src="${URL.createObjectURL(arquivo)}" style="max-width:200px;border-radius:8px;" />`;
+  } else {
+    previewComp.innerHTML = `<span>📄 ${arquivo.name}</span>`;
+  }
+
+  const fd = new FormData();
+  fd.append('arquivo', arquivo);
+  try {
+    const r = await fetch('http://localhost:3000/api/upload', { method: 'POST', body: fd });
+    const json = await r.json();
+    if(!r.ok) throw new Error(json.erro || 'Erro no upload');
+    comprovanteUrl = json.url;
+    toast('Comprovante enviado!', 'success');
+  } catch(err){
+    toast('Erro ao enviar: ' + err.message, 'error');
+    comprovanteUrl = '';
+  }
+});
+
+async function carregar(){
+  try {
+    const [matriculas, alunos] = await Promise.all([get('/matriculas'), get('/alunos')]);
+
+    const sel = document.querySelector('#select-aluno-matricula');
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      alunos.map(a => `<option value="${a.id_aluno}">${a.nome}</option>`).join('');
+
+    const tb = document.querySelector('#tabela-matriculas tbody');
+    tb.innerHTML = matriculas.length
+      ? matriculas.map(m => {
+          const link = m.comprovante_url
+            ? `<a href="${m.comprovante_url}" target="_blank">📎 Ver</a>`
+            : '—';
+          return `<tr>
+            <td><code>${m.numero_matricula}</code></td>
+            <td>${m.aluno}</td><td>${m.periodo_letivo}</td>
+            <td>${m.data_matricula||'—'}</td>
+            <td>${link}</td>
+            <td><button class="btn-del" onclick="excluir('matriculas', ${m.id_matricula}, carregar)">Excluir</button></td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="6" class="empty">Nenhuma matrícula emitida.</td></tr>`;
+  } catch(e){ toast('Erro ao carregar.', 'error'); }
+}
+
+bind('form-matricula', '/matriculas', f => ({
+  id_aluno: f.id_aluno.value,
+  periodo_letivo: f.periodo.value.trim(),
+  comprovante_url: comprovanteUrl
+}), 'Matrícula emitida!', async () => {
+  comprovanteUrl = '';
+  previewComp.innerHTML = '';
+  inputComp.value = '';
+  await carregar();
+});
+
+carregar();
+</script>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <span class="footer-logo-icon">🎓</span>
+        <div>
+          <div class="footer-logo-name">EduControl</div>
+          <div class="footer-logo-tag">Sistema de Gestão Escolar</div>
+        </div>
+      </div>
+      <p class="footer-desc">
+        Plataforma completa para gestão de escolas, professores, turmas e alunos.
+        Digitalize o ecossistema escolar com eficiência.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Módulos</h4>
+      <a href="escolas.html">Escolas</a>
+      <a href="disciplinas.html">Disciplinas</a>
+      <a href="turmas.html">Turmas</a>
+      <a href="alunos.html">Alunos</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Gestão</h4>
+      <a href="matriculas.html">Matrículas</a>
+      <a href="frequencia.html">Frequência</a>
+      <a href="index.html">Dashboard</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Contato</h4>
+      <a href="#">contato.com</a>
+      <a href="#">(11) 9999-9999</a>
+      <a href="#">Suporte técnico</a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 EduControl. Todos os direitos reservados.</span>
+    <span>Feito para gestão escolar</span>
+  </div>
+</footer>
+</body>
+</html>]

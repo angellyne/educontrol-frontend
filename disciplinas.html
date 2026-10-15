@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Disciplinas - EduControl</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🎓</span>
+    <h1>EduControl <small>v2.0</small></h1>
+  </div>
+  <nav class="tabs">
+    <a class="tab" href="index.html">Dashboard</a>
+    <a class="tab" href="escolas.html">Escolas &amp; Docentes</a>
+    <a class="tab active" href="disciplinas.html">Disciplinas</a>
+    <a class="tab" href="turmas.html">Turmas</a>
+    <a class="tab" href="alunos.html">Alunos &amp; Responsáveis</a>
+    <a class="tab" href="matriculas.html">Matrículas</a>
+    <a class="tab" href="frequencia.html">Frequência</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero-banner banner-escola"><div class="hero-content"><span class="hero-tag">Estrutura Acadêmica</span><h2 class="hero-title">Disciplinas</h2><p class="hero-subtitle">Cadastre disciplinas e defina a matriz curricular.</p></div></section>
+<h2>Disciplinas e Matriz Curricular</h2>
+
+  <form id="form-disciplina" class="form inline">
+    <label>Nome da Disciplina <input name="nome" required /></label>
+    <label>Carga Horária <input name="carga" type="number" min="1" /></label>
+    <button type="submit">Cadastrar Disciplina</button>
+  </form>
+
+  <h3>Disciplinas Cadastradas</h3>
+  <table id="tabela-disciplinas">
+    <thead><tr><th>ID</th><th>Nome</th><th>Carga Horária</th><th>Ações</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</main>
+
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+<script>
+async function carregar(){
+  try {
+    const disciplinas = await get('/disciplinas');
+    const tb = $('#tabela-disciplinas tbody');
+    tb.innerHTML = disciplinas.length
+      ? disciplinas.map(d => `<tr><td>${d.id_disciplina}</td><td>${d.nome}</td><td>${d.carga_horaria?d.carga_horaria+'h':'—'}</td><td><button class="btn-del" onclick="excluir('disciplinas', ${d.id_disciplina}, carregar)">Excluir</button></td></tr>`).join('')
+      : `<tr><td colspan="4" class="empty">Nenhuma disciplina cadastrada.</td></tr>`;
+  } catch(e){ toast('Erro ao carregar.', 'error'); }
+}
+
+bind('form-disciplina', '/disciplinas', f => ({
+  nome: f.nome.value.trim(),
+  carga: f.carga.value
+}), 'Disciplina cadastrada!', carregar);
+
+carregar();
+</script>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <span class="footer-logo-icon">🎓</span>
+        <div>
+          <div class="footer-logo-name">EduControl</div>
+          <div class="footer-logo-tag">Sistema de Gestão Escolar</div>
+        </div>
+      </div>
+      <p class="footer-desc">
+        Plataforma completa para gestão de escolas, professores, turmas e alunos.
+        Digitalize o ecossistema escolar com eficiência.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Módulos</h4>
+      <a href="escolas.html">Escolas</a>
+      <a href="disciplinas.html">Disciplinas</a>
+      <a href="turmas.html">Turmas</a>
+      <a href="alunos.html">Alunos</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Gestão</h4>
+      <a href="matriculas.html">Matrículas</a>
+      <a href="frequencia.html">Frequência</a>
+      <a href="index.html">Dashboard</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Contato</h4>
+      <a href="#">contato.com</a>
+      <a href="#">(11) 9999-9999</a>
+      <a href="#">Suporte técnico</a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 EduControl. Todos os direitos reservados.</span>
+    <span>Feito para gestão escolar</span>
+  </div>
+</footer>
+</body>
+</html>

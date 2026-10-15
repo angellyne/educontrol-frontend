@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Escolas & Docentes - EduControl</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🎓</span>
+    <h1>EduControl <small>v2.0</small></h1>
+  </div>
+  <nav class="tabs">
+    <a class="tab" href="index.html">Dashboard</a>
+    <a class="tab active" href="escolas.html">Escolas &amp; Docentes</a>
+    <a class="tab" href="disciplinas.html">Disciplinas</a>
+    <a class="tab" href="turmas.html">Turmas</a>
+    <a class="tab" href="alunos.html">Alunos &amp; Responsáveis</a>
+    <a class="tab" href="matriculas.html">Matrículas</a>
+    <a class="tab" href="frequencia.html">Frequência</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero-banner banner-escola"><div class="hero-content"><span class="hero-tag">Unidades Escolares</span><h2 class="hero-title">Escolas & Docentes</h2><p class="hero-subtitle">Cadastre escolas e vincule professores.</p></div></section>
+<h2>Gestão de Escolas e Docentes</h2>
+
+  <div class="grid-2">
+    <form id="form-escola" class="form">
+      <h3>Nova Escola</h3>
+      <label>Nome da Unidade <input name="nome" required /></label>
+      <label>Endereço <input name="endereco" /></label>
+      <label>CNPJ <input name="cnpj" /></label>
+      <button type="submit">Cadastrar Escola</button>
+    </form>
+
+    <form id="form-professor" class="form">
+      <h3>Novo Professor</h3>
+      <label>Nome <input name="nome" required /></label>
+      <label>CPF <input name="cpf" required /></label>
+      <label>E-mail <input type="email" name="email" required /></label>
+      <label>Escola de Lotação <select name="id_escola" id="select-escola-prof" required></select></label>
+      <button type="submit">Cadastrar Professor</button>
+    </form>
+  </div>
+
+  <h3>Escolas Cadastradas</h3>
+  <table id="tabela-escolas">
+    <thead><tr><th>ID</th><th>Nome</th><th>Endereço</th><th>CNPJ</th><th>Ações</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h3>Professores Cadastrados</h3>
+  <table id="tabela-professores">
+    <thead><tr><th>ID</th><th>Nome</th><th>CPF</th><th>E-mail</th><th>Escola</th><th>Ações</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</main>
+
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+<script>
+let escolas=[], professores=[];
+
+async function carregar(){
+  try {
+    [escolas, professores] = await Promise.all([get('/escolas'), get('/professores')]);
+    renderEscolas();
+    renderProfessores();
+    preencherSelectEscola();
+  } catch(e){
+    console.error(e);
+    toast('Backend offline.', 'error');
+  }
+}
+
+function renderEscolas(){
+  const tb = $('#tabela-escolas tbody');
+  tb.innerHTML = escolas.length
+    ? escolas.map(e => `<tr><td>${e.id_escola}</td><td>${e.nome}</td><td>${e.endereco||'—'}</td><td>${e.cnpj||'—'}</td><td><button class="btn-del" onclick="excluir('escolas', ${e.id_escola}, carregar)">Excluir</button></td></tr>`).join('')
+    : `<tr><td colspan="5" class="empty">Nenhuma escola cadastrada.</td></tr>`;
+}
+
+function renderProfessores(){
+  const tb = $('#tabela-professores tbody');
+  tb.innerHTML = professores.length
+    ? professores.map(p => `<tr><td>${p.id_professor}</td><td>${p.nome}</td><td>${p.cpf}</td><td>${p.email}</td><td>${p.escola||'—'}</td><td><button class="btn-del" onclick="excluir('professores', ${p.id_professor}, carregar)">Excluir</button></td></tr>`).join('')
+    : `<tr><td colspan="6" class="empty">Nenhum professor cadastrado.</td></tr>`;
+}
+
+function preencherSelectEscola(){
+  const sel = $('#select-escola-prof');
+  sel.innerHTML = '<option value="">Selecione...</option>' +
+    escolas.map(e => `<option value="${e.id_escola}">${e.nome}</option>`).join('');
+}
+
+bind('form-escola', '/escolas', f => ({
+  nome: f.nome.value.trim(),
+  endereco: f.endereco.value.trim(),
+  cnpj: f.cnpj.value.trim()
+}), 'Escola cadastrada!', carregar);
+
+bind('form-professor', '/professores', f => ({
+  nome: f.nome.value.trim(),
+  cpf: f.cpf.value.trim(),
+  email: f.email.value.trim(),
+  id_escola: f.id_escola.value
+}), 'Professor cadastrado!', carregar);
+
+carregar();
+</script>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <span class="footer-logo-icon">🎓</span>
+        <div>
+          <div class="footer-logo-name">EduControl</div>
+          <div class="footer-logo-tag">Sistema de Gestão Escolar</div>
+        </div>
+      </div>
+      <p class="footer-desc">
+        Plataforma completa para gestão de escolas, professores, turmas e alunos.
+        Digitalize o ecossistema escolar com eficiência.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Módulos</h4>
+      <a href="escolas.html">Escolas</a>
+      <a href="disciplinas.html">Disciplinas</a>
+      <a href="turmas.html">Turmas</a>
+      <a href="alunos.html">Alunos</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Gestão</h4>
+      <a href="matriculas.html">Matrículas</a>
+      <a href="frequencia.html">Frequência</a>
+      <a href="index.html">Dashboard</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Contato</h4>
+      <a href="#">contato.com</a>
+      <a href="#">(11) 9999-9999</a>
+      <a href="#">Suporte técnico</a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 EduControl. Todos os direitos reservados.</span>
+    <span>Feito para gestão escolar</span>
+  </div>
+</footer>
+</body>
+</html>

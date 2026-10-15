@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Turmas - EduControl</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🎓</span>
+    <h1>EduControl <small>v2.0</small></h1>
+  </div>
+  <nav class="tabs">
+    <a class="tab" href="index.html">Dashboard</a>
+    <a class="tab" href="escolas.html">Escolas &amp; Docentes</a>
+    <a class="tab" href="disciplinas.html">Disciplinas</a>
+    <a class="tab active" href="turmas.html">Turmas</a>
+    <a class="tab" href="alunos.html">Alunos &amp; Responsáveis</a>
+    <a class="tab" href="matriculas.html">Matrículas</a>
+    <a class="tab" href="frequencia.html">Frequência</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero-banner banner-escola"><div class="hero-content"><span class="hero-tag">Estrutura Acadêmica</span><h2 class="hero-title">Turmas</h2><p class="hero-subtitle">Crie turmas e organize a enturmação.</p></div></section>
+<h2>Gestão de Turmas</h2>
+
+  <form id="form-turma" class="form inline">
+    <label>Série <input name="serie" required /></label>
+    <label>Ano Letivo <input name="ano" type="number" required /></label>
+    <label>Nº de Chamada <input name="chamada" type="number" /></label>
+    <label>Capacidade <input name="capacidade" type="number" min="1" /></label>
+    <label>Escola <select name="id_escola" id="select-escola-turma" required></select></label>
+    <button type="submit">Criar Turma</button>
+  </form>
+
+  <h3>Turmas Cadastradas</h3>
+  <table id="tabela-turmas">
+    <thead><tr><th>ID</th><th>Série</th><th>Ano</th><th>Chamada</th><th>Capacidade</th><th>Qtd. Alunos</th><th>Escola</th><th>Ações</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</main>
+
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+<script>
+async function carregar(){
+  try {
+    const [turmas, escolas] = await Promise.all([get('/turmas'), get('/escolas')]);
+
+    const sel = $('#select-escola-turma');
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      escolas.map(e => `<option value="${e.id_escola}">${e.nome}</option>`).join('');
+
+    const tb = $('#tabela-turmas tbody');
+    tb.innerHTML = turmas.length
+      ? turmas.map(t => `<tr><td>${t.id_turma}</td><td>${t.serie}</td><td>${t.ano_letivo}</td><td>${t.numero_chamada||'—'}</td><td>${t.capacidade||'—'}</td><td>${t.quantidade_aluno||0}</td><td>${t.escola||'—'}</td><td><button class="btn-del" onclick="excluir('turmas', ${t.id_turma}, carregar)">Excluir</button></td></tr>`).join('')
+      : `<tr><td colspan="8" class="empty">Nenhuma turma cadastrada.</td></tr>`;
+  } catch(e){ toast('Erro ao carregar.', 'error'); }
+}
+
+bind('form-turma', '/turmas', f => ({
+  serie: f.serie.value.trim(),
+  ano: f.ano.value,
+  numero_chamada: f.chamada.value,
+  capacidade: f.capacidade.value,
+  id_escola: f.id_escola.value
+}), 'Turma criada!', carregar);
+
+carregar();
+</script>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <span class="footer-logo-icon">🎓</span>
+        <div>
+          <div class="footer-logo-name">EduControl</div>
+          <div class="footer-logo-tag">Sistema de Gestão Escolar</div>
+        </div>
+      </div>
+      <p class="footer-desc">
+        Plataforma completa para gestão de escolas, professores, turmas e alunos.
+        Digitalize o ecossistema escolar com eficiência.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Módulos</h4>
+      <a href="escolas.html">Escolas</a>
+      <a href="disciplinas.html">Disciplinas</a>
+      <a href="turmas.html">Turmas</a>
+      <a href="alunos.html">Alunos</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Gestão</h4>
+      <a href="matriculas.html">Matrículas</a>
+      <a href="frequencia.html">Frequência</a>
+      <a href="index.html">Dashboard</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Contato</h4>
+      <a href="#">contato.com</a>
+      <a href="#">(11) 9999-9999</a>
+      <a href="#">Suporte técnico</a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 EduControl. Todos os direitos reservados.</span>
+    <span>Feito para gestão escolar</span>
+  </div>
+</footer>
+</body>
+</html>

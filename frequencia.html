@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Frequência - EduControl</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🎓</span>
+    <h1>EduControl <small>v2.0</small></h1>
+  </div>
+  <nav class="tabs">
+    <a class="tab" href="index.html">Dashboard</a>
+    <a class="tab" href="escolas.html">Escolas &amp; Docentes</a>
+    <a class="tab" href="disciplinas.html">Disciplinas</a>
+    <a class="tab" href="turmas.html">Turmas</a>
+    <a class="tab" href="alunos.html">Alunos &amp; Responsáveis</a>
+    <a class="tab" href="matriculas.html">Matrículas</a>
+    <a class="tab active" href="frequencia.html">Frequência</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero-banner banner-criancas"><div class="hero-content"><span class="hero-tag">Presença Diária</span><h2 class="hero-title">Frequência</h2><p class="hero-subtitle">Registre entrada e saída dos alunos com histórico completo.</p></div></section>
+<h2>Controle de Frequência</h2>
+
+  <form id="form-frequencia" class="form inline">
+    <label>Aluno <select name="id_aluno" id="select-aluno-freq" required></select></label>
+    <label>Data <input type="date" name="data" id="freq-data" required /></label>
+    <label>Hora Entrada <input type="time" name="hora_entrada" required /></label>
+    <label>Hora Saída <input type="time" name="hora_saida" /></label>
+    <label>Status
+      <select name="status">
+        <option>PRESENTE</option><option>FALTA</option><option>ATRASADO</option><option>JUSTIFICADO</option>
+      </select>
+    </label>
+    <button type="submit">Registrar</button>
+  </form>
+
+  <h3>Histórico de Presença</h3>
+  <table id="tabela-frequencia">
+    <thead><tr><th>ID</th><th>Aluno</th><th>Data</th><th>Entrada</th><th>Saída</th><th>Status</th><th>Ações</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <p class="hint">a hora de saída deve ser posterior à de entrada.</p>
+</main>
+
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+<script>
+document.getElementById('freq-data').value = new Date().toISOString().split('T')[0];
+
+async function carregar(){
+  try {
+    const [frequencias, alunos] = await Promise.all([get('/frequencia'), get('/alunos')]);
+
+    const sel = $('#select-aluno-freq');
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      alunos.map(a => `<option value="${a.id_aluno}">${a.nome}</option>`).join('');
+
+    const tb = $('#tabela-frequencia tbody');
+    tb.innerHTML = frequencias.length
+      ? frequencias.map(h => `<tr><td>${h.id_presenca}</td><td>${h.aluno}</td><td>${h.data_presenca||'—'}</td><td>${h.hora_entrada||'—'}</td><td>${h.hora_saida||'—'}</td><td>${h.status_presenca}</td><td><button class="btn-del" onclick="excluir('frequencia', ${h.id_presenca}, carregar)">Excluir</button></td></tr>`).join('')
+      : `<tr><td colspan="7" class="empty">Nenhum registro de frequência.</td></tr>`;
+  } catch(e){ toast('Erro ao carregar.', 'error'); }
+}
+
+bind('form-frequencia', '/frequencia', f => ({
+  id_aluno: f.id_aluno.value,
+  data_presenca: f.data.value,
+  hora_entrada: f.hora_entrada.value,
+  hora_saida: f.hora_saida.value || null,
+  status_presenca: f.status.value
+}), 'Frequência registrada!', carregar);
+
+carregar();
+</script>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <span class="footer-logo-icon">🎓</span>
+        <div>
+          <div class="footer-logo-name">EduControl</div>
+          <div class="footer-logo-tag">Sistema de Gestão Escolar</div>
+        </div>
+      </div>
+      <p class="footer-desc">
+        Plataforma completa para gestão de escolas, professores, turmas e alunos.
+        Digitalize o ecossistema escolar com eficiência.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Módulos</h4>
+      <a href="escolas.html">Escolas</a>
+      <a href="disciplinas.html">Disciplinas</a>
+      <a href="turmas.html">Turmas</a>
+      <a href="alunos.html">Alunos</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Gestão</h4>
+      <a href="matriculas.html">Matrículas</a>
+      <a href="frequencia.html">Frequência</a>
+      <a href="index.html">Dashboard</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Contato</h4>
+      <a href="#">contato.com</a>
+      <a href="#">(11) 9999-9999</a>
+      <a href="#">Suporte técnico</a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 EduControl. Todos os direitos reservados.</span>
+    <span>Feito para gestão escolar</span>
+  </div>
+</footer>
+</body>
+</html>

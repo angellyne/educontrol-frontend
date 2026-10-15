@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard - EduControl</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🎓</span>
+    <h1>EduControl <small>v2.0</small></h1>
+  </div>
+  <nav class="tabs">
+    <a class="tab active" href="index.html">Dashboard</a>
+    <a class="tab" href="escolas.html">Escolas &amp; Docentes</a>
+    <a class="tab" href="disciplinas.html">Disciplinas</a>
+    <a class="tab" href="turmas.html">Turmas</a>
+    <a class="tab" href="alunos.html">Alunos &amp; Responsáveis</a>
+    <a class="tab" href="matriculas.html">Matrículas</a>
+    <a class="tab" href="frequencia.html">Frequência</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero-banner banner-criancas"><div class="hero-content"><span class="hero-tag">Sistema de Gestão Escolar</span><h2 class="hero-title">Educação que transforma.</h2><p class="hero-subtitle">Controle escolas, professores, turmas e alunos em um só lugar.</p></div></section>
+<h2>Painel Geral</h2>
+  <div class="cards">
+    <div class="card"><span id="stat-escolas">0</span><p>Escolas</p></div>
+    <div class="card"><span id="stat-professores">0</span><p>Professores</p></div>
+    <div class="card"><span id="stat-disciplinas">0</span><p>Disciplinas</p></div>
+    <div class="card"><span id="stat-turmas">0</span><p>Turmas</p></div>
+    <div class="card"><span id="stat-alunos">0</span><p>Alunos</p></div>
+    <div class="card"><span id="stat-matriculas">0</span><p>Matrículas</p></div>
+  </div>
+  <p class="hint">SLA esperado: 99,8% • Dados salvos no MySQL via API</p>
+</main>
+
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+<script>
+(async () => {
+  try {
+    const [escolas, professores, disciplinas, turmas, alunos, matriculas] = await Promise.all([
+      get('/escolas'), get('/professores'), get('/disciplinas'),
+      get('/turmas'), get('/alunos'),
+      get('/matriculas').catch(() => [])
+    ]);
+    const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+    set('stat-escolas', escolas.length);
+    set('stat-professores', professores.length);
+    set('stat-disciplinas', disciplinas.length);
+    set('stat-turmas', turmas.length);
+    set('stat-alunos', alunos.length);
+    set('stat-matriculas', matriculas.length);
+  } catch(e){
+    console.error(e);
+    toast('Backend offline. Rode "npm start" no backend.', 'error');
+  }
+})();
+</script>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <span class="footer-logo-icon">🎓</span>
+        <div>
+          <div class="footer-logo-name">EduControl</div>
+          <div class="footer-logo-tag">Sistema de Gestão Escolar</div>
+        </div>
+      </div>
+      <p class="footer-desc">
+        Plataforma completa para gestão de escolas, professores, turmas e alunos.
+        Digitalize o ecossistema escolar com eficiência.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Módulos</h4>
+      <a href="escolas.html">Escolas</a>
+      <a href="disciplinas.html">Disciplinas</a>
+      <a href="turmas.html">Turmas</a>
+      <a href="alunos.html">Alunos</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Gestão</h4>
+      <a href="matriculas.html">Matrículas</a>
+      <a href="frequencia.html">Frequência</a>
+      <a href="index.html">Dashboard</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Contato</h4>
+      <a href="#">contato.com</a>
+      <a href="#">(11) 9999-9999</a>
+      <a href="#">Suporte técnico</a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 EduControl. Todos os direitos reservados.</span>
+    <span>Feito para gestão escolar</span>
+  </div>
+</footer>
+</body>
+</html>
